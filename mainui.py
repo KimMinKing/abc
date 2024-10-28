@@ -27,11 +27,14 @@ class MyWindow(QtWidgets.QMainWindow):
         # 버튼과 레이블 설정
         self.testtradingbtn.clicked.connect(self.test_trading)
         self.chartbtn.clicked.connect(self.chartui)
-        # self.checkdatabtn.clicked.connect(self.checkdatas)
+        self.checkdatabtn.clicked.connect(self.checkdatas)
         self.strategyaddbtn.clicked.connect(self.strategyadd)
         self.strategydelbtn.clicked.connect(self.strategydel)
         self.livetradingstartbtn.clicked.connect(self.start)
         self.checkstrategybtn.clicked.connect(self.checkstrategy)
+
+    def checkdatas(self):
+        pass
 
     def checkstrategy(self):
         self.input.show_check_strategies(self.main.strategies)
@@ -43,8 +46,7 @@ class MyWindow(QtWidgets.QMainWindow):
         recent_true_index = self.main.data_manager.indicators['5m']['abcstrategy'][::-1].idxmax()
         data=self.main.data_manager.data['5m'].copy()
         # DataFrame의 time 열을 인덱스로 설정
-        data.set_index('time', inplace=True)
-        print(f"가장 최근의 True 값은 {type(recent_true_index)}번째입니다.")
+        print(f"가장 최근의 True 값은 {recent_true_index}번째입니다.")
         # print(f"날짜에 맞는 데이터 : {data.loc[recent_true_index]['high']}")
 
     def uicallback(self, interval,data):
@@ -66,6 +68,17 @@ class MyWindow(QtWidgets.QMainWindow):
         #분봉 콤보박스 설정
         minutes=self.main.strategies.keys()
         self.minutecombo.addItems(minutes)
+
+        #일단 테스트로 매일 넣는거임
+        selected_item = '5m'+"-"+'abcStrategyShort'
+        if selected_item and self.check_list(selected_item):    #중복 확인, 값 확인
+            self.strategylist.addItem(selected_item)            #combobox에 직접 값 입력
+            self.main.strategyadd('5m', 'abcStrategyShort')          #main에 전략 추가
+        selected_item = '5m'+"-"+'abcStrategyLong'
+        if selected_item and self.check_list(selected_item):    #중복 확인, 값 확인
+            self.strategylist.addItem(selected_item)            #combobox에 직접 값 입력
+            self.main.strategyadd('5m', 'abcStrategyLong')          #main에 전략 추가
+
 
 
     #전략 설정 후 추가
@@ -113,22 +126,28 @@ class MyWindow(QtWidgets.QMainWindow):
         # 기존 범위 저장 (xlim, ylim)
         xlim_1m, ylim_1m = None, None
         xlim_5m, ylim_5m = None, None
+        xlim_30m, ylim_30m = None, None
+        xlim_1h, ylim_1h = None, None
 
-        if hasattr(self, 'canvas1') and hasattr(self, 'canvas2'):
+        if hasattr(self, 'canvas1') and hasattr(self, 'canvas2') and hasattr(self, 'canvas3') and hasattr(self, 'canvas4'):
             # 기존에 차트가 그려져 있었으면 현재 범위를 저장
             xlim_1m = self.canvas1.figure.axes[0].get_xlim()
             ylim_1m = self.canvas1.figure.axes[0].get_ylim()
             xlim_5m = self.canvas2.figure.axes[0].get_xlim()
             ylim_5m = self.canvas2.figure.axes[0].get_ylim()
+            xlim_30m = self.canvas4.figure.axes[0].get_xlim()
+            ylim_30m = self.canvas4.figure.axes[0].get_ylim()
+            xlim_1h = self.canvas3.figure.axes[0].get_xlim()
+            ylim_1h = self.canvas3.figure.axes[0].get_ylim()
 
-        # 두 개의 Figure 객체를 가져옴
-        fig_1m, fig_5m = self.main.plot_charts()
+        # 세 개의 Figure 객체를 가져옴 (1분, 5분, 1시간)
+        fig_1m, fig_5m, fig30m, fig_1h = self.main.plot_charts()
 
         # chartWidget 초기화 (기존 위젯 제거)
         for widget, attr_name, fig in zip(
-            [self.chartWidget1, self.chartWidget2],
-            ['canvas1', 'canvas2'],
-            [fig_1m, fig_5m]
+            [self.chartWidget1, self.chartWidget2, self.chartWidget3, self.chartWidget4],
+            ['canvas1', 'canvas2', 'canvas3', 'canvas4'],
+            [fig_1m, fig_5m, fig_1h, fig30m]
         ):
             if widget.layout() is not None:
                 # 기존 레이아웃의 모든 아이템 제거
@@ -154,13 +173,21 @@ class MyWindow(QtWidgets.QMainWindow):
 
             # 이전 범위 설정 (범위가 있을 경우)
             if (attr_name == 'canvas1' and xlim_1m is not None and ylim_1m is not None) or \
-            (attr_name == 'canvas2' and xlim_5m is not None and ylim_5m is not None):
+            (attr_name == 'canvas2' and xlim_5m is not None and ylim_5m is not None) or \
+            (attr_name == 'canvas3' and xlim_1h is not None and ylim_1h is not None) or \
+            (attr_name == 'canvas4' and xlim_30m is not None and ylim_30m is not None)    :
                 if attr_name == 'canvas1':
                     canvas.figure.axes[0].set_xlim(xlim_1m)
                     canvas.figure.axes[0].set_ylim(ylim_1m)
-                else:
+                elif attr_name == 'canvas2':
                     canvas.figure.axes[0].set_xlim(xlim_5m)
                     canvas.figure.axes[0].set_ylim(ylim_5m)
+                elif attr_name == 'canvas3':
+                    canvas.figure.axes[0].set_xlim(xlim_1h)
+                    canvas.figure.axes[0].set_ylim(ylim_1h)
+                elif attr_name == 'canvas4':
+                    canvas.figure.axes[0].set_xlim(xlim_30m)
+                    canvas.figure.axes[0].set_ylim(ylim_30m)
 
             # 차트 새로고침
             canvas.draw()

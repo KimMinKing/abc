@@ -7,6 +7,7 @@ from rest_api import BinanceAPI
 from strategy import available_strategies, get_strategy_class
 from input_handler import InputHandler
 from chart import plot_candlestick_charts
+import time
 
 class MainTrading:
 
@@ -17,6 +18,7 @@ class MainTrading:
         self.strategies = {
             '1m': [],
             '5m': [],
+            '30m': [],
             '1h': []
         }
 
@@ -24,9 +26,12 @@ class MainTrading:
     def strategyadd(self, timeframe, strategyname):
         strategy_class = get_strategy_class(strategyname)  # strategyname에 해당하는 클래스 가져오기
 
+
         if strategy_class is not None and timeframe in self.strategies:
             self.strategies[timeframe].append(strategy_class())
+            
             print(f"{strategy_class.__name__} 전략이 {timeframe}에 추가되었습니다.")
+                    # 추가된 전략들 실행
 
     #전략 삭제 main ui와 연동
     def strategydel(self, timeframe, strategyname):
@@ -43,6 +48,7 @@ class MainTrading:
 
     #웹소켓 호출시 들어오는 콜백함수
     def data_callback(self,interval, data):
+
         # 데이터 추가
         self.data_manager.add_data(interval, data)
         self.data_manager.set_indi(interval)
@@ -62,7 +68,8 @@ class MainTrading:
                 # 시간 형식을 "MM/DD HH:MM:SS"로 출력
                 formatted_time = now.strftime("%m/%d %H:%M:%S")
                 print(formatted_time, end='')
-                print(tfstrategy)  
+                print(tfstrategy)
+                #정보 확인 후 매매 하도록 trader에 전달
 
 
 
@@ -78,6 +85,14 @@ class MainTrading:
         self.data_manager.data["5m"]=self.data_manager.convert_api_data(five_minute_data, self.symbol)
         self.data_manager.set_indi('5m')
 
+        thirty_minute_data = restapi.get_klines(self.symbol, "30m")
+        self.data_manager.data["30m"]=self.data_manager.convert_api_data(thirty_minute_data, self.symbol)
+        self.data_manager.set_indi('30m')
+
+        one_hour_data = restapi.get_klines(self.symbol, "1h")
+        self.data_manager.data["1h"]=self.data_manager.convert_api_data(one_hour_data, self.symbol)
+        self.data_manager.set_indi('1h')
+
         
         ws = BinanceWebSocket(self.symbol, self.data_callback)
         ws_thread = threading.Thread(target=ws.run)
@@ -87,7 +102,7 @@ class MainTrading:
 
     def plot_charts(self):
         
-        return plot_candlestick_charts(self.data_manager.data['1m'], self.data_manager.data['5m'], self.data_manager.indicators)
+        return plot_candlestick_charts(self.data_manager.data['1m'], self.data_manager.data['5m'], self.data_manager.data['30m'],self.data_manager.data['1h'], self.data_manager.indicators)
 
 
 if __name__ == "__main__":

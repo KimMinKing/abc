@@ -10,6 +10,7 @@ class DataManager:
         self.data = {   #1분봉 5분봉 1시간봉 저장역할.
             '1m': deque(maxlen=max_size),
             '5m': deque(maxlen=max_size),
+            '30m': deque(maxlen=max_size),
             '1h': deque(maxlen=max_size)
         }
 
@@ -24,6 +25,24 @@ class DataManager:
             'wma12': None
             },
             '5m':{
+            'fs': None,
+            'fs2': None,
+            'fs3': None,
+            'ultimate': None,
+            'percenthl': None,
+            'smi': None,
+            'wma12': None
+            },
+            '30m':{
+            'fs': None,
+            'fs2': None,
+            'fs3': None,
+            'ultimate': None,
+            'percenthl': None,
+            'smi': None,
+            'wma12': None
+            },
+            '1h':{
             'fs': None,
             'fs2': None,
             'fs3': None,
