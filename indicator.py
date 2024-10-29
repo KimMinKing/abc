@@ -161,35 +161,51 @@ class Indicator:
 
         return pd.Series(WMA(df['close'].values, period))
     
+    #빨간 고점 찾기?
+    def getabc(self, indicators, reverse=False):
 
-    def getabc(self, indicators):
+        if reverse:
+            abc = (indicators['fs']['h_color'] != 'g') & (indicators['percenthl'] != 'red') & (indicators['fs']['dm'] <= -5.4)
 
-        abc = (indicators['percenthl'] == 'red') & (indicators['fs']['h_color'] != 'r') & (indicators['fs']['dm'] >= 6.66)
-
-        return abc
-    
-    def getorangespear(self, indicators):
-
-        abc = ((indicators['percenthl'] == 'red')|(indicators['percenthl'] == 'blue')) & (indicators['fs2']['h_color']=='orange')
+        else:
+            abc = (indicators['percenthl'] == 'red') & (indicators['fs']['h_color'] != 'r') & (indicators['fs']['dm'] >= 6.66)
 
         return abc
     
-    def gettriangleup(self, indicators):
+    def getorangespear(self, indicators ,veriosn=1):
 
-        abc = ((indicators['percenthl'] == 'red')|(indicators['percenthl'] == 'blue')) & (indicators['fs']['h_color']=='orange')
+        if veriosn == 1:
+            abc = ((indicators['percenthl'] == 'red')|(indicators['percenthl'] == 'blue')) & (indicators['fs2']['h_color']=='orange')
+
+        return abc
+    
+    def gettriangleup(self, indicators,veriosn=1):
+
+        if veriosn == 1:
+            abc = ((indicators['percenthl'] == 'red')|(indicators['percenthl'] == 'blue')) & (indicators['fs']['h_color']=='orange')
 
         return abc
 
     # 조건을 만족하는 부분 필터링
-    def filter_conditions(self,indicators):
-        # orangespear와 triangleup이 모두 True인 부분 찾기
-        condition_1 = (indicators['orangespear'] == True) & (indicators['triangleup'] == True)
+    def get_abcstrategy(self,indicators,data, reverse=False,veriosn=1):
         
-        # abc가 3개봉 전, 2개봉 전, 1개봉 전, 0개봉 전에 True였던 부분 찾기
-        condition_2 = (indicators['abc'].shift(3) == True) | \
-                    (indicators['abc'].shift(2) == True) | \
-                    (indicators['abc'].shift(1) == True) | \
-                    (indicators['abc'] == True)
+        if veriosn == 1:
+            # orangespear와 triangleup이 모두 True인 부분 찾기
+            condition_1 =  (indicators['orangespear'] == True) & (indicators['triangleup'] == True)
+        
+            if reverse:
+                # abc reverse가 3개봉 전, 2개봉 전, 1개봉 전, 0개봉 전에 True였던 부분 찾기
+                condition_2 = (indicators['abcreverse'].shift(3) == True) | \
+                            (indicators['abcreverse'].shift(2) == True) | \
+                            (indicators['abcreverse'].shift(1) == True) | \
+                            (indicators['abcreverse'] == True)
+            else:
+                # abc가 3개봉 전, 2개봉 전, 1개봉 전, 0개봉 전에 True였던 부분 찾기
+                condition_2 = (indicators['abc'].shift(3) == True) | \
+                            (indicators['abc'].shift(2) == True) | \
+                            (indicators['abc'].shift(1) == True) | \
+                            (indicators['abc'] == True)
+                
         
         # 두 조건이 모두 참인 경우를 필터링
         combined_condition = condition_1 & condition_2
@@ -203,7 +219,7 @@ class Indicator:
         indicators['smi']=self.calculate_smi(data)
         indicators['fs']=self.pine_script_indicatorsfs(data, slow=6,fast=9,signal=15)
         indicators['fs2']=self.pine_script_indicatorsfs(data, slow=188,fast=200,signal=300)
-        indicators['fs3']=self.pine_script_indicatorsfs(data, slow=6,fast=9,signal=15)
+        indicators['fs3']=self.pine_script_indicatorsfs(data, slow=90,fast=100,signal=150)
         indicators['percenthl'] = self.pine_script_indicatorpercenthl(data)
         indicators['wma12']=self.calculate_wma(data)
         indicators['wma26']=self.calculate_wma(data,26)
@@ -211,9 +227,11 @@ class Indicator:
                     (data['high'] < indicators['wma12']) & (data['high'] < indicators['wma26'])
         
         indicators['abc'] = self.getabc(indicators)
+        indicators['abcreverse'] = self.getabc(indicators,True)
         indicators['orangespear'] = self.getorangespear(indicators)
         indicators['triangleup']=self.gettriangleup(indicators)
-        indicators['abcstrategy']=self.filter_conditions(indicators)
+        indicators['abcstrategy']=self.get_abcstrategy(indicators,data)
+        indicators['abcstrategyreverse']=self.get_abcstrategy(indicators,data, True)
 
         return indicators
 
