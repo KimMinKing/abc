@@ -38,7 +38,7 @@ class BinanceWebSocket:
 
     def run(self):
         ws = websocket.WebSocketApp(    #1m과 5m이 들어옴.
-            f"wss://fstream.binance.com/ws/{self.symbols}@kline_1m/{self.symbols}@kline_5m/{self.symbols}@kline_1h",
+            f"wss://fstream.binance.com/ws/{self.symbols}@kline_1m/{self.symbols}@kline_5m/{self.symbols}@kline_30m/{self.symbols}@kline_1h",
             # f"wss://stream.binance.com:9443/ws/{self.symbols}@kline_1m/{self.symbols}@kline_5m",
             on_message=self.on_message,
             on_error=self.on_error,

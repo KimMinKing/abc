@@ -93,7 +93,9 @@ class DataManager:
 
 
 
-    
+    def get_data_all(self):
+        return self.data
+
     def get_data(self, interval):
         """주어진 시간봉의 DataFrame을 반환합니다."""
         return self.data[interval]

@@ -19,6 +19,7 @@ class BinanceAPI:
 
 
 
+
 # 사용 예시
 if __name__ == "__main__":
     api = BinanceAPI()

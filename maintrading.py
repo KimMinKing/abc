@@ -7,13 +7,19 @@ from rest_api import BinanceAPI
 from strategy import available_strategies, get_strategy_class
 from input_handler import InputHandler
 from chart import plot_candlestick_charts
+from telegrambot import TelegramBot
 import time
+import json
 
 class MainTrading:
-
+    TELEGRAM_BOT_TOKEN = '6572201072:AAF5BbXTC3JJrVqLLbyYwIUZbiZ9ErIQceE'
+    TELEGRAM_CHAT_ID = '6981481834'
     def __init__(self):
         self.data_manager = DataManager()
-        
+
+        self.bot = TelegramBot(self.TELEGRAM_BOT_TOKEN, self.TELEGRAM_CHAT_ID)
+
+
         self.symbol="btcusdt"
         self.strategies = {
             '1m': [],
@@ -57,7 +63,7 @@ class MainTrading:
         # 추가된 전략들 실행
         for strategy in self.strategies[interval]:
 
-            strategy_data = self.data_manager.get_data(interval)    #데이터 매니저에서 데이터 가져오고
+            strategy_data = self.data_manager.get_data_all()    #데이터 매니저에서 데이터 가져오고
             indicator_data = self.data_manager.get_indi(interval)   #데이터 매니저에서 지표 가져오고
             tfstrategy=strategy.execute(strategy_data, indicator_data, interval)# DataManager의 데이터를 전달
             
@@ -69,8 +75,20 @@ class MainTrading:
                 formatted_time = now.strftime("%m/%d %H:%M:%S")
                 print(formatted_time, end='')
                 print(tfstrategy)
+                # ensure_ascii=False 옵션을 사용하여 한글을 유니코드가 아닌 UTF-8로 전송
+                json_data = json.dumps(tfstrategy, ensure_ascii=False)
+
+                self.send_alert(json_data)
                 #정보 확인 후 매매 하도록 trader에 전달
 
+    def send_alert(self, message, chart=None):
+        # 텔레그램으로 메시지 전송
+        self.bot.send_message(message)
+        # 차트 이미지 생성 및 전송
+
+        if chart:
+            self.bot.send_chart(chart)
+    
 
 
     def startdata(self):
