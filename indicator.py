@@ -205,6 +205,22 @@ class Indicator:
                             (indicators['abc'].shift(2) == True) | \
                             (indicators['abc'].shift(1) == True) | \
                             (indicators['abc'] == True)
+        elif veriosn==2:
+            # orangespear와 triangleup이 모두 True인 부분 찾기
+            condition_1 =  ((indicators['orangespear'] == True) & indicators['fs2']['redgreen']==1) & (indicators['triangleup'] == True)
+        
+            if reverse:
+                # abc reverse가 3개봉 전, 2개봉 전, 1개봉 전, 0개봉 전에 True였던 부분 찾기
+                condition_2 = (indicators['abcreverse'].shift(3) == True) | \
+                            (indicators['abcreverse'].shift(2) == True) | \
+                            (indicators['abcreverse'].shift(1) == True) | \
+                            (indicators['abcreverse'] == True)
+            else:
+                # abc가 3개봉 전, 2개봉 전, 1개봉 전, 0개봉 전에 True였던 부분 찾기
+                condition_2 = (indicators['abc'].shift(3) == True) | \
+                            (indicators['abc'].shift(2) == True) | \
+                            (indicators['abc'].shift(1) == True) | \
+                            (indicators['abc'] == True)            
                 
         
         # 두 조건이 모두 참인 경우를 필터링
@@ -231,6 +247,7 @@ class Indicator:
         indicators['orangespear'] = self.getorangespear(indicators)
         indicators['triangleup']=self.gettriangleup(indicators)
         indicators['abcstrategy']=self.get_abcstrategy(indicators,data)
+        indicators['abcstrategy2']=self.get_abcstrategy(indicators,data,veriosn=2)
         indicators['abcstrategyreverse']=self.get_abcstrategy(indicators,data, True)
 
         return indicators

@@ -11,6 +11,7 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
     """
     1분봉과 5분봉 차트를 각각의 Figure 객체로 반환하는 함수.
     """
+
     # 캔들 색상을 반대로 설정 (상승: 빨간색, 하락: 초록색)
     market_colors = mpf.make_marketcolors(up='r', down='g', edge='inherit', wick='inherit', volume='inherit')
     style = mpf.make_mpf_style(marketcolors=market_colors)
@@ -35,15 +36,25 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
             marker_positions = df['high'][indicators[interval]['abc']] + 0.001 * df['high']
             return marker_positions
     
-    def abc_strategy_markers(df ,interval, reverse=False):
+    def abc_strategy_markers(df ,interval, reverse=False, version=1):
         #abc의 전략을 쉽게 보기 위한 마커 추가
-        if reverse:
-            indicators[interval]['abcstrategyreverse'].index = df['high'].index
-            marker_positions = df['high'][indicators[interval]['abcstrategyreverse']] + 0.002 * df['high']
-            
-        else:
-            indicators[interval]['abcstrategy'].index = df['high'].index
-            marker_positions = df['high'][indicators[interval]['abcstrategy']] + 0.0015 * df['high']
+        if version==1:
+            if reverse:
+                indicators[interval]['abcstrategyreverse'].index = df['high'].index
+                marker_positions = df['high'][indicators[interval]['abcstrategyreverse']] + 0.002 * df['high']
+                
+            else:
+                indicators[interval]['abcstrategy'].index = df['high'].index
+                marker_positions = df['high'][indicators[interval]['abcstrategy']] + 0.0015 * df['high']
+        elif version==2:
+            if reverse:
+                indicators[interval]['abcstrategyreverse'].index = df['high'].index
+                marker_positions = df['high'][indicators[interval]['abcstrategyreverse']] + 0.002 * df['high']
+                
+            else:
+                indicators[interval]['abcstrategy2'].index = df['high'].index
+                marker_positions = df['high'][indicators[interval]['abcstrategy2']] + 0.0001 * df['close']
+ 
 
         return marker_positions
     
@@ -59,7 +70,7 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
         marker_positions = df['low'][indicators[interval]['triangleup']] - 0.0023 * df['low']
         return marker_positions
 
-
+    df_5m_2=df_5m.copy()
     # 5분봉 차트용 Figure 생성
     fig_5m, ax_5m = plt.subplots(figsize=(10, 5))
     # 5분봉 차트
@@ -91,6 +102,41 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
     plt.tight_layout()
 
 
+    # 5분봉 차트용 Figure 생성
+    fig_5m_2, ax_5m_2 = plt.subplots(figsize=(10, 5))
+    # 5분봉 차트
+    if not df_5m_2.empty:
+        # x축을 마지막 100개로 제한
+        ax_5m_2.set_xlim(df_5m_2.index[-100], df_5m_2.index[-1])  # 마지막 100개만 보이도록 설정
+        df_5m_2 = df_5m_2.set_index(pd.DatetimeIndex(df_5m_2['time']))
+
+        #5분봉 차트, 마커 추가
+        add_plots_5m_2 = [
+            mpf.make_addplot(indicators['5m']['wma12'], color='blue', ax=ax_5m_2),
+            mpf.make_addplot(indicators['5m']['wma26'], color='orange', ax=ax_5m_2),
+            mpf.make_addplot(add_markers(df_5m_2,'5m'), type='scatter', marker='^', markersize=10, color='g', ax=ax_5m_2),  # 마커 추가
+            mpf.make_addplot(abc_markers(df_5m_2,'5m'), type='scatter', marker='^', markersize=10, color='red', ax=ax_5m_2),  # 마커 추가
+            # mpf.make_addplot(abc_markers(df_5m_2,'5m',reverse=True), type='scatter', marker='^', markersize=10, color='black', ax=ax_5m_2),  # 마커 추가
+            mpf.make_addplot(spear_markers(df_5m_2,'5m'), type='scatter', marker='|', markersize=18, color='orange', ax=ax_5m_2),  # 마커 추가
+            mpf.make_addplot(triangleup_markers(df_5m_2,'5m'), type='scatter', marker='^', markersize=18, color='orange', ax=ax_5m_2),  # 마커 추가
+            mpf.make_addplot(abc_strategy_markers(df_5m_2,'5m',version=2), type='scatter', marker='^', markersize=15, color='blue', ax=ax_5m_2),  # 마커 추가
+            mpf.make_addplot(abc_strategy_markers(df_5m_2,'5m',True), type='scatter', marker='^', markersize=20, color='black', ax=ax_5m_2),  # 마커 추가
+            ]
+
+        mpf.plot(df_5m_2, type='candle', warn_too_much_data=1000, style=style, ax=ax_5m_2, addplot=add_plots_5m_2,  ylabel='', xlabel='')
+
+
+        # x축 날짜 포맷 변경
+        # ax_5m_2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))  # 시간만 표시
+        # ax_5m_2.xaxis.set_major_locator(mdates.MinuteLocator(interval=5))  # 5분 간격으로 표시
+        plt.setp(ax_5m_2.xaxis.get_majorticklabels(), rotation=0)  # 기울임 제거
+    plt.tight_layout()
+
+
+
+
+
+
     # 1시간봉 차트용 Figure 생성
     fig_1h, ax_1h = plt.subplots(figsize=(10, 5))
     # 1시간봉 차트
@@ -120,6 +166,7 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
         # ax_1h.xaxis.set_major_locator(mdates.MinuteLocator(interval=5))  # 5분 간격으로 표시
         plt.setp(ax_1h.xaxis.get_majorticklabels(), rotation=0)  # 기울임 제거
     plt.tight_layout()
+
 
     # 30분봉 차트용 Figure 생성
     fig_30m, ax_30m = plt.subplots(figsize=(10, 5))
@@ -176,5 +223,7 @@ def plot_candlestick_charts(df_1m, df_5m, df_30m, df_1h, indicators):
     plt.tight_layout()
     plt.close(fig_1m)
     plt.close(fig_5m)
+    plt.close(fig_5m_2)
+    plt.close(fig_30m)
     plt.close(fig_1h)
-    return fig_1m, fig_5m, fig_30m, fig_1h  # 두 개의 Figure 객체를 반환
+    return fig_1m, fig_5m, fig_5m_2, fig_30m, fig_1h  # 두 개의 Figure 객체를 반환
